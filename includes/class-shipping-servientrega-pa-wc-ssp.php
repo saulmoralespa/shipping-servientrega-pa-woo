@@ -1,7 +1,7 @@
 <?php
 
 use ServientregaPanama\WebService;
-class Shipping_Servientrega_PA_WC extends WC_Shipping_Method_Shipping_Servientrega_PA_WC
+class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servientrega_PA_WC_SSP
 {
     public WebService $servientrega;
 

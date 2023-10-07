@@ -1,6 +1,6 @@
 <?php
 
-class Shipping_Servientrega_PA_WC_Plugin
+class SHIPPING_SERVIENTREGA_PA_WC_SSP_Plugin
 {
     /**
      * Filepath of main plugin file.
@@ -74,12 +74,12 @@ class Shipping_Servientrega_PA_WC_Plugin
     {
         if (!class_exists('\ServientregaPanama\WebService'))
             require_once ($this->lib_path . 'servientrega-webservice-php/src/autoload.php');
-        require_once ($this->includes_path . 'class-method-shipping-servientrega-pa-wc.php');
-        require_once ($this->includes_path . 'class-shipping-servientrega-pa-wc.php');
+        require_once ($this->includes_path . 'class-method-shipping-servientrega-pa-wc-ssp.php');
+        require_once ($this->includes_path . 'class-shipping-servientrega-pa-wc-ssp.php');
 
         add_filter( 'plugin_action_links_' . plugin_basename($this->file), array($this, 'plugin_action_links'));
         add_filter( 'woocommerce_shipping_methods', array($this, 'shipping_servientrega_pa_wc_add_method'));
-        add_action( 'woocommerce_order_status_changed', array('Shipping_Servientrega_PA_WC', 'generate_guide'), 20, 4 );
+        add_action( 'woocommerce_order_status_changed', array('Shipping_Servientrega_PA_WC_SSP', 'generate_guide'), 20, 4 );
     }
 
     public function log($message)
@@ -87,7 +87,7 @@ class Shipping_Servientrega_PA_WC_Plugin
         if (is_array($message) || is_object($message))
             $message = print_r($message, true);
         $logger = new WC_Logger();
-        $logger->add('shipping-servientrega-pa', $message);
+        $logger->add('shipping-servientrega-pa-ssp', $message);
     }
 
     public function plugin_action_links($links)
@@ -99,7 +99,7 @@ class Shipping_Servientrega_PA_WC_Plugin
 
     public function shipping_servientrega_pa_wc_add_method( $methods )
     {
-        $methods['shipping_servientrega_pa_wc'] = 'WC_Shipping_Method_Shipping_Servientrega_PA_WC';
+        $methods['shipping_servientrega_pa_wc'] = 'WC_Shipping_Method_Shipping_Servientrega_PA_WC_SSP';
         return $methods;
     }
 }

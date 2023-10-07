@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Shipping Servientrega Panamá Woocommerce
+ * Plugin Name: Shipping Servientrega Panamá Woo
  * Description: Shipping Servientrega Panamá Woocommerce
  * Version: 1.0.0
  * Author: Saul Morales Pacheco
@@ -37,19 +37,6 @@ function shipping_servientrega_pa_wc_ssp_notices( $notice ) {
 }
 
 function shipping_servientrega_pa_wc_ssp_requirements(){
-
-
-    /*if ( ! extension_loaded( 'soap' ) ) {
-        if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
-            add_action(
-                'admin_notices',
-                function() {
-                    shipping_servientrega_pa_wc_ssp_notices( 'Shipping Servientrega Panamá Woocommerce requiere la extensión soap se encuentre instalada' );
-                }
-            );
-        }
-        return false;
-    }*/
 
     if ( ! extension_loaded( 'xml' ) ){
         if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
@@ -104,8 +91,8 @@ function shipping_servientrega_pa_wc_ssp_requirements(){
 function shipping_servientrega_pa_wc_ssp(){
     static $plugin;
     if (!isset($plugin)){
-        require_once('includes/class-shipping-servientrega-pa-wc-plugin.php');
-        $plugin = new Shipping_Servientrega_PA_WC_Plugin(__FILE__, SHIPPING_SERVIENTREGA_PA_WC_SSP_VERSION);
+        require_once('includes/class-shipping-servientrega-pa-wc-ssp-plugin.php');
+        $plugin = new SHIPPING_SERVIENTREGA_PA_WC_SSP_Plugin(__FILE__, SHIPPING_SERVIENTREGA_PA_WC_SSP_VERSION);
     }
     return $plugin;
 }

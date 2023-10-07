@@ -1,6 +1,6 @@
 <?php
 
-class WC_Shipping_Method_Shipping_Servientrega_PA_WC extends WC_Shipping_Method
+class WC_Shipping_Method_Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method
 {
     public function __construct($instance_id = 0)
     {
@@ -55,8 +55,8 @@ class WC_Shipping_Method_Shipping_Servientrega_PA_WC extends WC_Shipping_Method
     public function admin_options()
     {
         ?>
-        <h3><?php echo $this->title; ?></h3>
-        <p><?php echo $this->method_description; ?></p>
+        <h2><?php echo esc_html($this->title); ?></h2>
+        <p><?php echo wp_kses_post(wpautop($this->method_description)); ?></p>
         <table class="form-table">
             <?php $this->generate_settings_html(); ?>
         </table>

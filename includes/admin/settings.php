@@ -27,7 +27,7 @@ wc_enqueue_js( "
 
 
 return apply_filters(
-    'shipping_servientrega_pa_wc_settings',
+    'shipping_servientrega_pa_wc_ssp_settings',
     array_merge(
     array(
         'enabled' => array(
