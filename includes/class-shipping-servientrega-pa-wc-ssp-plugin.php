@@ -7,41 +7,41 @@ class SHIPPING_SERVIENTREGA_PA_WC_SSP_Plugin
      *
      * @var string
      */
-    public $file;
+    public string $file;
     /**
      * Plugin version.
      *
      * @var string
      */
-    public $version;
+    public string $version;
     /**
      * Absolute plugin path.
      *
      * @var string
      */
-    public $plugin_path;
+    public string $plugin_path;
     /**
      * Absolute plugin URL.
      *
      * @var string
      */
-    public $plugin_url;
+    public string $plugin_url;
     /**
      * Absolute path to plugin includes dir.
      *
      * @var string
      */
-    public $includes_path;
+    public string $includes_path;
     /**
      * Absolute path to plugin lib dir
      *
      * @var string
      */
-    public $lib_path;
+    public string $lib_path;
     /**
      * @var bool
      */
-    private $_bootstrapped = false;
+    private bool $_bootstrapped = false;
 
     public function __construct($file, $version)
     {
@@ -53,7 +53,7 @@ class SHIPPING_SERVIENTREGA_PA_WC_SSP_Plugin
         $this->lib_path = $this->plugin_path . trailingslashit( 'lib' );
     }
 
-    public function run_servientrega_wc()
+    public function run_servientrega_wc(): void
     {
         try{
             if ($this->_bootstrapped){
@@ -70,10 +70,10 @@ class SHIPPING_SERVIENTREGA_PA_WC_SSP_Plugin
         }
     }
 
-    protected function _run()
+    protected function _run(): void
     {
-        if (!class_exists('\ServientregaPanama\WebService'))
-            require_once ($this->lib_path . 'servientrega-webservice-php/src/autoload.php');
+        if (!class_exists('\Saulmoralespa\ServientregaPanama\WebService'))
+            require_once ($this->lib_path . 'vendor/autoload.php');
         require_once ($this->includes_path . 'class-method-shipping-servientrega-pa-wc-ssp.php');
         require_once ($this->includes_path . 'class-shipping-servientrega-pa-wc-ssp.php');
 
@@ -82,7 +82,7 @@ class SHIPPING_SERVIENTREGA_PA_WC_SSP_Plugin
         add_action( 'woocommerce_order_status_changed', array('Shipping_Servientrega_PA_WC_SSP', 'generate_guide'), 20, 4 );
     }
 
-    public function log($message)
+    public function log($message): void
     {
         if (is_array($message) || is_object($message))
             $message = print_r($message, true);
@@ -90,14 +90,14 @@ class SHIPPING_SERVIENTREGA_PA_WC_SSP_Plugin
         $logger->add('shipping-servientrega-pa-ssp', $message);
     }
 
-    public function plugin_action_links($links)
+    public function plugin_action_links($links): array
     {
         $plugin_links = array();
         $plugin_links[] = '<a href="' . admin_url( 'admin.php?page=wc-settings&tab=shipping&section=shipping_servientrega_pa_wc') . '">' . 'Configuraciones' . '</a>';
         return array_merge( $plugin_links, $links );
     }
 
-    public function shipping_servientrega_pa_wc_add_method( $methods )
+    public function shipping_servientrega_pa_wc_add_method( array $methods ): array
     {
         $methods['shipping_servientrega_pa_wc'] = 'WC_Shipping_Method_Shipping_Servientrega_PA_WC_SSP';
         return $methods;

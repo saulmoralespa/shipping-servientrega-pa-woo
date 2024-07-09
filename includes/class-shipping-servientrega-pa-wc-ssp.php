@@ -1,27 +1,84 @@
 <?php
 
-use ServientregaPanama\WebService;
+use Saulmoralespa\ServientregaPanama\WebService;
+
 class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servientrega_PA_WC_SSP
 {
-    public WebService $servientrega;
+    public static ?WebService $servientrega = null;
+    private static $shipping_settings = null;
 
-    public function __construct($instance_id = 0)
+    public static function test_quote($user, $token): bool
     {
-        parent::__construct($instance_id);
-
-        $this->servientrega = new WebService($this->usu, $this->pwd);
-        $this->servientrega->sandbox_mode($this->isTest);
+        try{
+            $servientrega = new WebService($user, $token);
+            $data = array(
+                "tipo" => "obtener_tarifa_nacional",
+                'ciu_ori' => "24 DE DICIEMBRE",
+                'provincia_ori' => "PANAMA",
+                'ciu_des' => "BAGALA",
+                'provincia_des' => "CHIRIQUI",
+                'valor_declarado' => "200.5",
+                'peso' => 5,
+                'alto' => 20,
+                'ancho' => 25,
+                'largo' => 30,
+                'recoleccion' => 'NO',
+                "nombre_producto" => "PREMIER-RESIDENCIAL",
+            );
+            $servientrega->quote($data);
+        }catch (Exception $exception){
+            return false;
+        }
+        return true;
     }
 
-    public static function generate_guide($order_id, $old_status, $new_status, WC_Order $order)
+    public static function get_instance(): ?WebService
     {
-        $guide_servientrega = get_post_meta($order->get_id(), 'guide_servientrega', true);
-        $instance = new self();
+        if(isset(self::$shipping_settings) && isset(self::$servientrega)) return self::$servientrega;
 
-        if (!(($order->has_shipping_method($instance->id)  ||
-                $order->get_shipping_total() == 0) &&
-            empty($guide_servientrega) &&
-            $new_status === 'completed')
+        self::$shipping_settings = get_option('woocommerce_shipping_servientrega_pa_wc_settings');
+
+        if(!isset(self::$shipping_settings)) return null;
+
+        self::$shipping_settings = (object)self::$shipping_settings;
+
+        if(!self::$shipping_settings->enabled) return null;
+
+        if(self::$shipping_settings->username &&
+            self::$shipping_settings->password){
+            self::$servientrega = new WebService(self::$shipping_settings->username, self::$shipping_settings->password);
+        }
+
+        return self::$servientrega;
+    }
+
+    public static function liquidation(array $data): ?array
+    {
+        if (!self::get_instance()) return null;
+
+        $res = null;
+
+        try {
+            $res = self::get_instance()->quote($data);
+        }catch (\Exception $exception){
+            shipping_servientrega_pa_wc_ssp()->log($exception->getMessage());
+        }
+
+        return $res;
+    }
+
+    public static function generate_guide($order_id, $old_status, $new_status, WC_Order $order): void
+    {
+        if (!self::get_instance() || wc_get_order_status_name($new_status) !== wc_get_order_status_name(self::$shipping_settings->order_status_generate_guide)) return;
+
+        $guide_servientrega = get_post_meta($order->get_id(), '_guide_servientrega', true);
+
+        $method_id = 'shipping_filters_by_cities_sfbc';
+
+        if (!(($order->has_shipping_method($method_id)  ||
+                $order->get_shipping_total() == 0 &&
+                self::$shipping_settings->guide_free_shipping === 'yes') &&
+            empty($guide_servientrega))
         ) return;
 
         try{
@@ -41,7 +98,6 @@ class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servie
 
             $items = $order->get_items();
             $name_products = [];
-            $total_valorization = 0;
 
             foreach ($items as $values ) {
 
@@ -52,14 +108,14 @@ class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servie
                     $_product = wc_get_product( $values['variation_id'] );
 
                 $name_products[] = $_product->get_name();
-
-                $custom_price_product = get_post_meta($_product->get_id(), '_shipping_custom_price_product_smp', true);
-                $total_price = $custom_price_product > 0 ? wc_format_decimal($custom_price_product, 0) : wc_format_decimal($_product->get_price(), 0);
-
-                $total_valorization += $total_price * $values['quantity'];
             }
 
             $namesProducts = implode(" ",  $name_products);
+            $service = str_contains($order->get_shipping_method(), 'Sucursal de Servientrega') ? 'PREMIER-CDS A CDS' : 'PREMIER-RESIDENCIAL';
+
+            if(str_contains($service, 'CDS')){
+                $direccion_destinatario = "CDS $name_state $direccion_destinatario";
+            }
 
             $params = [
                 'nombre_destinatario' => $nombre_destinatario,
@@ -70,18 +126,18 @@ class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servie
                 'direccion_remite' => '',
                 'distrito_remite' => '',
                 'provincia_remite' => '',
-                'servicio' => 'PREMIER-RESIDENCIAL',
+                'servicio' => $service,
                 'telefono' => $order->get_billing_phone(),
                 'peso' => '',
                 'piezas' => count($items),
                 'volumen' => '',
                 'contiene' => substr($namesProducts, 0, 50),
                 'transporte' => 'TERRESTRE',
-                'valor_declarado' => $total_valorization,
+                'valor_declarado' => $order->get_total(),
                 'info01' => substr($namesProducts, 0, 50),
                 'valor_recaudar' => 0,
                 'remision' => '',
-                'factura' => $order->get_id(),
+                'factura' => ($order->get_total() - $order->get_shipping_total()),
                 'observacion' => substr($namesProducts, 0, 50),
                 'guia_cliente' => '',
                 'latitud' => '',
@@ -89,11 +145,12 @@ class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servie
                 'mail_destinatario' => $order->get_billing_email(),
                 'fecha_programacion' => ''
             ];
-            $result = $instance->servientrega->generar_guia($params);
+
+            $result = self::get_instance()->generarGuia($params);
             $number_guide = $result['miembro']['guia'];
             $url_guide = $result['miembro']['url'];
-            update_post_meta($order->get_id(), 'guide_servientrega', $number_guide);
-            $guide_nota = sprintf( __( 'Guia Servientrega <a target="_blank" href="%1$s">' . $number_guide .'</a>.' ), $url_guide );
+            update_post_meta($order->get_id(), '_guide_servientrega', $number_guide);
+            $guide_nota = sprintf( __( 'Guía Servientrega <a target="_blank" href="%1$s">' . $number_guide .'</a>.' ), $url_guide );
             $order->add_order_note($guide_nota);
         }catch (\Exception $exception){
             shipping_servientrega_pa_wc_ssp()->log($exception->getMessage());
@@ -114,14 +171,13 @@ class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servie
         return $country_states_array[$country][$state_destination];
     }
 
-    public static function normalize_string($string)
+    public static function normalize_string($string): string
     {
         $not_permitted = array ("á","é","í","ó","ú","Á","É","Í",
             "Ó","Ú","ñ");
         $permitted = array ("a","e","i","o","u","A","E","I","O",
             "U","n");
         $text = str_replace($not_permitted, $permitted, $string);
-        $text = mb_strtoupper($text);
-        return $text;
+        return mb_strtoupper($text);
     }
 }

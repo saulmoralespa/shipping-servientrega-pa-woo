@@ -7,8 +7,9 @@
  * Author URI: https://saulmoralespa.com
  * License: GNU General Public License v3.0
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
- * WC tested up to: 6.9
+ * WC tested up to: 8.9.2
  * WC requires at least: 6.9
+ * Requires Plugins: woocommerce
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -19,16 +20,18 @@ if(!defined('SHIPPING_SERVIENTREGA_PA_WC_SSP_VERSION')){
     define('SHIPPING_SERVIENTREGA_PA_WC_SSP_VERSION', '1.0.0');
 }
 
-add_action( 'plugins_loaded', 'shipping_servientrega_pa_wc_ssp_init', 1 );
+add_action( 'plugins_loaded', 'shipping_servientrega_pa_wc_ssp_init');
 
-function shipping_servientrega_pa_wc_ssp_init(){
+function shipping_servientrega_pa_wc_ssp_init(): void
+{
     if ( ! shipping_servientrega_pa_wc_ssp_requirements() )
         return;
 
     shipping_servientrega_pa_wc_ssp()->run_servientrega_wc();
 }
 
-function shipping_servientrega_pa_wc_ssp_notices( $notice ) {
+function shipping_servientrega_pa_wc_ssp_notices( $notice ): void
+{
     ?>
     <div class="error notice">
         <p><?php echo $notice; ?></p>
@@ -36,7 +39,8 @@ function shipping_servientrega_pa_wc_ssp_notices( $notice ) {
     <?php
 }
 
-function shipping_servientrega_pa_wc_ssp_requirements(){
+function shipping_servientrega_pa_wc_ssp_requirements(): bool
+{
 
     if ( ! extension_loaded( 'xml' ) ){
         if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
@@ -50,24 +54,10 @@ function shipping_servientrega_pa_wc_ssp_requirements(){
         return false;
     }
 
-    if ( ! is_plugin_active(
-        'woocommerce/woocommerce.php'
-    ) ) {
-        if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
-            add_action(
-                'admin_notices',
-                function() {
-                    shipping_servientrega_pa_wc_ssp_notices( 'Shipping Servientrega Panamá Woocommerce requiere que se encuentre instalado y activo el plugin: Woocommerce' );
-                }
-            );
-        }
-        return false;
-    }
-
     $woo_countries   = new WC_Countries();
     $default_country = $woo_countries->get_base_country();
 
-    if ( ! in_array( $default_country, array( 'PA' ), true ) ) {
+    if ($default_country !== 'PA') {
         if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
             add_action(
                 'admin_notices',

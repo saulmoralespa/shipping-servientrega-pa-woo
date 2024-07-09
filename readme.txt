@@ -2,8 +2,8 @@
 Contributors: saulmorales
 Tags: commerce, e-commerce, commerce, WordPress ecommerce, store, sales, sell, shop, shopping, cart, checkout, configurable, Panama, Servientrega
 Requires at least: 6.2
-Tested up to: 6.3
-Requires PHP: 8.1
+Tested up to: 6.5
+Requires PHP: 8.0
 Stable tag: 1.0.0
 License: GNU General Public License v3.0
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
