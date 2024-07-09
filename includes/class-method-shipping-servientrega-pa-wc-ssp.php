@@ -151,4 +151,23 @@ class WC_Shipping_Method_Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Met
         $this->add_rate($rate);
 
     }
+
+    public function districts_options(): array
+    {
+        if(empty($_GET['section']) || $_GET['section'] !== $this->id) return [];
+
+        $country = 'PA';
+        $districts = WC_Districts_Places_Panama::get_districts($country);
+        $countries_obj = new WC_Countries();
+        $country_states_array = $countries_obj->get_states();
+        $states = $country_states_array[$country];
+
+        return array_reduce(array_keys($districts), function ($carry, $key) use ($districts, $states) {
+            $province = $states[$key];
+            $mapped = array_map(function ($district) use ($key, $province) {
+                return ["$key~$district" => "$province - $district"];
+            }, $districts[$key]);
+            return array_merge($carry, ...$mapped);
+        }, []);
+    }
 }

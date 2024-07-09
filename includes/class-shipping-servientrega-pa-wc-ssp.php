@@ -92,9 +92,15 @@ class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servie
             $city = $order->get_shipping_city() ? $order->get_shipping_city() : $order->get_billing_city();
             $city = self::normalize_string($city);
             $code_state = $order->get_shipping_state() ? $order->get_shipping_state() : $order->get_billing_state();
-            $code_country = $order->get_shipping_country() ? $order->get_shipping_country() :  $order->get_billing_country();
-            $name_state = self::name_destination($code_country, $code_state);
+            $name_state = self::name_destination($code_state);
             $name_state = self::normalize_string($name_state);
+            $district_sender = self::$shipping_settings->district_sender;
+            $district_arr = explode("~", $district_sender);
+            $province_code = $district_arr[0];
+            $provincia_remite = $province_code ? self::name_destination($province_code) : '';
+            $provincia_remite = self::normalize_string($provincia_remite);
+            $distrito_remite = $district_arr[1] ?? '';
+            $distrito_remite = self::normalize_string($distrito_remite);
 
             $items = $order->get_items();
             $name_products = [];
@@ -117,28 +123,32 @@ class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servie
                 $direccion_destinatario = "CDS $name_state $direccion_destinatario";
             }
 
+            $direccion_remite =  self::$shipping_settings->sender_address ?: get_option( 'woocommerce_store_address' ) .
+                " " .  get_option( 'woocommerce_store_address_2' ) .
+                " " . get_option( 'woocommerce_store_city' );
+
             $params = [
                 'nombre_destinatario' => $nombre_destinatario,
                 'direccion_destinatario' => $direccion_destinatario,
                 'distrito_destinatario' => $name_state,
                 'provincia_destinatario' => $city,
-                'nombre_remite' => '',
-                'direccion_remite' => '',
-                'distrito_remite' => '',
-                'provincia_remite' => '',
+                'nombre_remite' => self::$shipping_settings->sender_name,
+                'direccion_remite' => $direccion_remite,
+                'distrito_remite' => $distrito_remite,
+                'provincia_remite' => $provincia_remite,
                 'servicio' => $service,
                 'telefono' => $order->get_billing_phone(),
                 'peso' => '',
                 'piezas' => count($items),
                 'volumen' => '',
-                'contiene' => substr($namesProducts, 0, 50),
+                'contiene' => self::$shipping_settings->dice_contener ? 'MERCANCIA FRAGIL' : substr($namesProducts, 0, 50),
                 'transporte' => 'TERRESTRE',
                 'valor_declarado' => $order->get_total(),
-                'info01' => substr($namesProducts, 0, 50),
+                'info01' => '',
                 'valor_recaudar' => 0,
                 'remision' => '',
                 'factura' => ($order->get_total() - $order->get_shipping_total()),
-                'observacion' => substr($namesProducts, 0, 50),
+                'observacion' => '',
                 'guia_cliente' => '',
                 'latitud' => '',
                 'longitud' => '',
@@ -158,7 +168,7 @@ class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servie
 
     }
 
-    public static  function name_destination($country, $state_destination)
+    public static  function name_destination($state_destination, $country = 'PA')
     {
         $countries_obj = new WC_Countries();
         $country_states_array = $countries_obj->get_states();

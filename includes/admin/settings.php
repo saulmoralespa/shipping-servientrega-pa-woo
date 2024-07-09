@@ -68,6 +68,46 @@ return apply_filters(
                     'PREMIER-CDS A CDS' => __( 'PREMIER-CDS A CDS')
                 ),
             ),
+            'sender'  => array(
+                'title' => __( 'Remitente' ),
+                'type'  => 'title',
+                'description' => __( 'Información requerida del remitente' )
+            ),
+            'sender_name' => array(
+                'title'       => __( 'Nombre remitente' ),
+                'type'        => 'text',
+                'description' => __( 'Debe ir la razon social o el nombre comercial' ),
+                'default'     => get_bloginfo('name'),
+                'desc_tip'    => true
+            ),
+            'district_sender' => array(
+                'title' => __('Distrito del remitente (donde se encuentra ubicada la tienda)'),
+                'type'        => 'select',
+                'class'       => 'wc-enhanced-select',
+                'description' => __('Se recomienda selecionar distritos centrales'),
+                'desc_tip' => true,
+                'default' => true,
+                'options'     => $this->districts_options()
+            ),
+            'sender_address' => array(
+                'title'       => __( 'Dirección remitente' ),
+                'type'        => 'text',
+                'description' => __( 'Dirección del remitente' ),
+                'default'     => '',
+                'desc_tip'    => true
+            ),
+            'dice_contener' => array(
+                'title' => __( 'Dice contener' ),
+                'type'  => 'select',
+                'class' => 'wc-enhanced-select',
+                'description' => __( 'Opciones para el campo de dice contener' ),
+                'desc_tip' => true,
+                'default' => 0,
+                'options'  => array(
+                    0    => __( 'Nombres de productos'),
+                    1    => __( 'Mercancía frágil')
+                )
+            ),
             'order_status_generate_guide' => array(
                 'title' => __( 'Estado del pedido' ),
                 'type' => 'select',
@@ -83,7 +123,7 @@ return apply_filters(
                 'default'     => 'no',
                 'description' => __( 'Permite la generación de guías cuando el envío es gratuito' ),
                 'desc_tip' => true
-            )
+            ),
         )
     )
 );
