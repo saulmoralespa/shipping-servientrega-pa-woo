@@ -4,6 +4,9 @@ use Saulmoralespa\ServientregaPanama\WebService;
 
 class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servientrega_PA_WC_SSP
 {
+
+    const DIR_GUIDES = 'guides-servientrega';
+
     public static ?WebService $servientrega = null;
     private static $shipping_settings = null;
 
@@ -159,13 +162,15 @@ class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servie
             $result = self::get_instance()->generarGuia($params);
             $number_guide = $result['miembro']['guia'];
             $url_guide = $result['miembro']['url'];
+            $base64 = $result['miembro']['autoscan64'];
+            $bin = base64_decode($base64, true);
+            self::save_guide($number_guide, $bin);
             update_post_meta($order->get_id(), '_guide_servientrega', $number_guide);
             $guide_nota = sprintf( __( 'Guía Servientrega <a target="_blank" href="%1$s">' . $number_guide .'</a>.' ), $url_guide );
             $order->add_order_note($guide_nota);
         }catch (\Exception $exception){
             shipping_servientrega_pa_wc_ssp()->log($exception->getMessage());
         }
-
     }
 
     public static  function name_destination($state_destination, $country = 'PA')
@@ -189,5 +194,19 @@ class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servie
             "U","n");
         $text = str_replace($not_permitted, $permitted, $string);
         return mb_strtoupper($text);
+    }
+
+    protected static function save_guide($number_guide, $guide): void
+    {
+        $upload_dir = wp_upload_dir();
+        $dir = trailingslashit($upload_dir['basedir']) . trailingslashit(self::DIR_GUIDES);
+
+        if (!is_dir($dir)){
+            mkdir($dir,0755);
+        }
+
+        $filename = $dir . "$number_guide.pdf";
+
+        file_put_contents($filename, $guide);
     }
 }
