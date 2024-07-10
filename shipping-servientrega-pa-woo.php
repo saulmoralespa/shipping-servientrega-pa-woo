@@ -86,3 +86,16 @@ function shipping_servientrega_pa_wc_ssp(){
     }
     return $plugin;
 }
+
+function activate_servientrega_pa_wc_ssp(): void
+{
+    wp_schedule_event( time(), 'monthly', 'servientrega_pa_wc_ssp_schedule' );
+}
+
+function deactivation_sservientrega_pa_wc_ssp():void
+{
+    wp_clear_scheduled_hook( 'servientrega_pa_wc_ssp_schedule' );
+}
+
+register_activation_hook( __FILE__, 'activate_servientrega_pa_wc_ssp' );
+register_deactivation_hook( __FILE__, 'deactivation_sservientrega_pa_wc_ssp' );

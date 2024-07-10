@@ -80,6 +80,7 @@ class SHIPPING_SERVIENTREGA_PA_WC_SSP_Plugin
         add_filter( 'plugin_action_links_' . plugin_basename($this->file), array($this, 'plugin_action_links'));
         add_filter( 'woocommerce_shipping_methods', array($this, 'shipping_servientrega_pa_wc_add_method'));
         add_action( 'woocommerce_order_status_changed', array('Shipping_Servientrega_PA_WC_SSP', 'generate_guide'), 20, 4 );
+        add_action( 'servientrega_pa_wc_ssp_schedule', array('Shipping_Servientrega_PA_WC_SSP', 'delete_old_pdfs'));
     }
 
     public function log($message): void

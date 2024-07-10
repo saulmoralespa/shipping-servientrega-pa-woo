@@ -4,7 +4,6 @@ use Saulmoralespa\ServientregaPanama\WebService;
 
 class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servientrega_PA_WC_SSP
 {
-
     const DIR_GUIDES = 'guides-servientrega';
 
     public static ?WebService $servientrega = null;
@@ -122,9 +121,9 @@ class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servie
             $namesProducts = implode(" ",  $name_products);
             $service = str_contains($order->get_shipping_method(), 'Sucursal de Servientrega') ? 'PREMIER-CDS A CDS' : 'PREMIER-RESIDENCIAL';
 
-            if(str_contains($service, 'CDS')){
+            /*if(str_contains($service, 'CDS')){
                 $direccion_destinatario = "CDS $name_state $direccion_destinatario";
-            }
+            }*/
 
             $direccion_remite =  self::$shipping_settings->sender_address ?: get_option( 'woocommerce_store_address' ) .
                 " " .  get_option( 'woocommerce_store_address_2' ) .
@@ -133,8 +132,8 @@ class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servie
             $params = [
                 'nombre_destinatario' => $nombre_destinatario,
                 'direccion_destinatario' => $direccion_destinatario,
-                'distrito_destinatario' => $name_state,
-                'provincia_destinatario' => $city,
+                'distrito_destinatario' => $city,
+                'provincia_destinatario' => $name_state,
                 'nombre_remite' => self::$shipping_settings->sender_name,
                 'direccion_remite' => $direccion_remite,
                 'distrito_remite' => $distrito_remite,
@@ -201,12 +200,29 @@ class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servie
         $upload_dir = wp_upload_dir();
         $dir = trailingslashit($upload_dir['basedir']) . trailingslashit(self::DIR_GUIDES);
 
-        if (!is_dir($dir)){
+        if (!is_dir($dir)) {
             mkdir($dir,0755);
         }
 
         $filename = $dir . "$number_guide.pdf";
 
         file_put_contents($filename, $guide);
+    }
+
+    public static function delete_old_pdfs(): void
+    {
+        $upload_dir = wp_upload_dir();
+        $dir = trailingslashit($upload_dir['basedir']) . trailingslashit(self::DIR_GUIDES);
+        $files = glob($dir . '/*');
+        $now = time();
+
+        foreach ($files as $file) {
+            if (!is_file($file)) continue;
+
+            $fileLastModified = filemtime($file);
+            if ($now - $fileLastModified >= 30 * 24 * 60 * 60) {
+                unlink($file);
+            }
+        }
     }
 }
