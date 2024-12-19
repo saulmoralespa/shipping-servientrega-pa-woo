@@ -83,81 +83,81 @@ class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servie
             empty($guide_servientrega))
         ) return;
 
+        $nombre_destinatario = $order->get_shipping_first_name() ? $order->get_shipping_first_name() .
+            " " . $order->get_shipping_last_name() : $order->get_billing_first_name() .
+            " " . $order->get_billing_last_name();
+        $nombre_destinatario = self::normalize_string($nombre_destinatario);
+        $direccion_destinatario = $order->get_shipping_address_1() ? $order->get_shipping_address_1() .
+            " " . $order->get_shipping_address_2() : $order->get_billing_address_1() .
+            " " . $order->get_billing_address_2();
+        $city = $order->get_shipping_city() ? $order->get_shipping_city() : $order->get_billing_city();
+        $city = self::normalize_string($city);
+        $code_state = $order->get_shipping_state() ? $order->get_shipping_state() : $order->get_billing_state();
+        $name_state = self::name_destination($code_state);
+        $name_state = self::normalize_string($name_state);
+        $district_sender = self::$shipping_settings->district_sender;
+        $district_arr = explode("~", $district_sender);
+        $province_code = $district_arr[0];
+        $provincia_remite = $province_code ? self::name_destination($province_code) : '';
+        $provincia_remite = self::normalize_string($provincia_remite);
+        $distrito_remite = $district_arr[1] ?? '';
+        $distrito_remite = self::normalize_string($distrito_remite);
+
+        $items = $order->get_items();
+        $name_products = [];
+
+        foreach ($items as $values ) {
+
+            $_product_id = $values['product_id'];
+            $_product = wc_get_product( $_product_id );
+
+            if ( $values['variation_id'] > 0 && in_array( $values['variation_id'], $_product->get_children() ) )
+                $_product = wc_get_product( $values['variation_id'] );
+
+            $name_products[] = $_product->get_name();
+        }
+
+        $namesProducts = implode(" ",  $name_products);
+        $service = str_contains($order->get_shipping_method(), 'Sucursal de Servientrega') ? 'PREMIER-CDS A CDS' : 'PREMIER-RESIDENCIAL';
+
+        /*if(str_contains($service, 'CDS')){
+            $direccion_destinatario = "CDS $name_state $direccion_destinatario";
+        }*/
+
+        $direccion_remite =  self::$shipping_settings->sender_address ?: get_option( 'woocommerce_store_address' ) .
+            " " .  get_option( 'woocommerce_store_address_2' ) .
+            " " . get_option( 'woocommerce_store_city' );
+
+        $params = [
+            'nombre_destinatario' => $nombre_destinatario,
+            'direccion_destinatario' => $direccion_destinatario,
+            'distrito_destinatario' => $city,
+            'provincia_destinatario' => $name_state,
+            'nombre_remite' => self::$shipping_settings->sender_name,
+            'direccion_remite' => $direccion_remite,
+            'distrito_remite' => $distrito_remite,
+            'provincia_remite' => $provincia_remite,
+            'servicio' => $service,
+            'telefono' => $order->get_billing_phone(),
+            'peso' => '',
+            'piezas' => 1,
+            'volumen' => '',
+            'contiene' => self::$shipping_settings->dice_contener ? 'MERCANCIA FRAGIL' : substr($namesProducts, 0, 50),
+            'transporte' => 'TERRESTRE',
+            'valor_declarado' => $order->get_total(),
+            'info01' => '',
+            'valor_recaudar' => 0,
+            'remision' => '',
+            'factura' => ($order->get_total() - $order->get_shipping_total()),
+            'observacion' => '',
+            'guia_cliente' => '',
+            'latitud' => '',
+            'longitud' => '',
+            'mail_destinatario' => $order->get_billing_email(),
+            'fecha_programacion' => ''
+        ];
+
         try{
-            $nombre_destinatario = $order->get_shipping_first_name() ? $order->get_shipping_first_name() .
-                " " . $order->get_shipping_last_name() : $order->get_billing_first_name() .
-                " " . $order->get_billing_last_name();
-            $nombre_destinatario = self::normalize_string($nombre_destinatario);
-            $direccion_destinatario = $order->get_shipping_address_1() ? $order->get_shipping_address_1() .
-                " " . $order->get_shipping_address_2() : $order->get_billing_address_1() .
-                " " . $order->get_billing_address_2();
-            $city = $order->get_shipping_city() ? $order->get_shipping_city() : $order->get_billing_city();
-            $city = self::normalize_string($city);
-            $code_state = $order->get_shipping_state() ? $order->get_shipping_state() : $order->get_billing_state();
-            $name_state = self::name_destination($code_state);
-            $name_state = self::normalize_string($name_state);
-            $district_sender = self::$shipping_settings->district_sender;
-            $district_arr = explode("~", $district_sender);
-            $province_code = $district_arr[0];
-            $provincia_remite = $province_code ? self::name_destination($province_code) : '';
-            $provincia_remite = self::normalize_string($provincia_remite);
-            $distrito_remite = $district_arr[1] ?? '';
-            $distrito_remite = self::normalize_string($distrito_remite);
-
-            $items = $order->get_items();
-            $name_products = [];
-
-            foreach ($items as $values ) {
-
-                $_product_id = $values['product_id'];
-                $_product = wc_get_product( $_product_id );
-
-                if ( $values['variation_id'] > 0 && in_array( $values['variation_id'], $_product->get_children() ) )
-                    $_product = wc_get_product( $values['variation_id'] );
-
-                $name_products[] = $_product->get_name();
-            }
-
-            $namesProducts = implode(" ",  $name_products);
-            $service = str_contains($order->get_shipping_method(), 'Sucursal de Servientrega') ? 'PREMIER-CDS A CDS' : 'PREMIER-RESIDENCIAL';
-
-            /*if(str_contains($service, 'CDS')){
-                $direccion_destinatario = "CDS $name_state $direccion_destinatario";
-            }*/
-
-            $direccion_remite =  self::$shipping_settings->sender_address ?: get_option( 'woocommerce_store_address' ) .
-                " " .  get_option( 'woocommerce_store_address_2' ) .
-                " " . get_option( 'woocommerce_store_city' );
-
-            $params = [
-                'nombre_destinatario' => $nombre_destinatario,
-                'direccion_destinatario' => $direccion_destinatario,
-                'distrito_destinatario' => $city,
-                'provincia_destinatario' => $name_state,
-                'nombre_remite' => self::$shipping_settings->sender_name,
-                'direccion_remite' => $direccion_remite,
-                'distrito_remite' => $distrito_remite,
-                'provincia_remite' => $provincia_remite,
-                'servicio' => $service,
-                'telefono' => $order->get_billing_phone(),
-                'peso' => '',
-                'piezas' => count($items),
-                'volumen' => '',
-                'contiene' => self::$shipping_settings->dice_contener ? 'MERCANCIA FRAGIL' : substr($namesProducts, 0, 50),
-                'transporte' => 'TERRESTRE',
-                'valor_declarado' => $order->get_total(),
-                'info01' => '',
-                'valor_recaudar' => 0,
-                'remision' => '',
-                'factura' => ($order->get_total() - $order->get_shipping_total()),
-                'observacion' => '',
-                'guia_cliente' => '',
-                'latitud' => '',
-                'longitud' => '',
-                'mail_destinatario' => $order->get_billing_email(),
-                'fecha_programacion' => ''
-            ];
-
             $result = self::get_instance()->generarGuia($params);
             $number_guide = $result['miembro']['guia'];
             $url_guide = $result['miembro']['url'];
@@ -167,7 +167,9 @@ class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servie
             update_post_meta($order->get_id(), '_guide_servientrega', $number_guide);
             $guide_nota = sprintf( __( 'Guía Servientrega <a target="_blank" href="%1$s">' . $number_guide .'</a>.' ), $url_guide );
             $order->add_order_note($guide_nota);
+            do_action('shipping_servientrega_pa_wc_generated_guide', $order_id);
         }catch (\Exception $exception){
+            shipping_servientrega_pa_wc_ssp()->log($params);
             shipping_servientrega_pa_wc_ssp()->log($exception->getMessage());
         }
     }
