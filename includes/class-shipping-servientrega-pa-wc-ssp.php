@@ -158,10 +158,11 @@ class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servie
         ];
 
         try{
-            $result = self::get_instance()->generarGuia($params);
+            $print_is_carta = self::$shipping_settings->print_type === 'carta';
+            $result = self::get_instance()->generarGuia($params, $print_is_carta);
             $number_guide = $result['miembro']['guia'];
-            $url_guide = $result['miembro']['url'];
-            $base64 = $result['miembro']['autoscan64'];
+            $url_guide = $result['miembro']['url'] ?? $result['miembro']['autoscan'][0];
+            $base64 = $result['miembro']['autoscan64'] ?? $result['miembro']['autoscan'][1];
             $bin = base64_decode($base64, true);
             self::save_guide($number_guide, $bin);
             update_post_meta($order->get_id(), '_guide_servientrega', $number_guide);
@@ -171,6 +172,58 @@ class Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Method_Shipping_Servie
         }catch (\Exception $exception){
             shipping_servientrega_pa_wc_ssp()->log($params);
             shipping_servientrega_pa_wc_ssp()->log($exception->getMessage());
+        }
+    }
+
+    public static function order_status_changed_state_guide_schedule($order_id): void
+    {
+        $order = wc_get_order($order_id);
+        $number_guide = $order->get_meta('_guide_servientrega');
+        $status = "Ingresando a CPL COLON"; // Estado para completar el pedido
+
+        try {
+            $data = [
+                "id" => $number_guide
+            ];
+            $result = self::get_instance()->tracking($data);
+            $contains_gestion = !empty(array_filter(
+                $result['miembro'],
+                fn($entry) => isset($entry['gestion']) && $entry['gestion'] === $status
+            ));
+
+            $hours_to_seconds = 60 * 60 * 2;
+
+            if(!$contains_gestion) {
+                wp_schedule_single_event(time() + $hours_to_seconds, 'order_status_changed_state_guide_schedule', array('order_id' => $order_id));
+                return;
+            }
+
+            $order->update_status('completed');
+            $order->save();
+        } catch (\Exception $exception) {
+            shipping_servientrega_pa_wc_ssp()->log($exception->getMessage());
+        }
+    }
+
+    public static function orders_status_changed_state_guide_schedule(): void
+    {
+        $ids = wc_get_orders([
+            'post_type' => 'shop_order',
+            'post_status' => 'wc-processing',
+            'orderby' => 'date',
+            'order' => 'DESC',
+            'limit' => -1,
+            'meta_query' => [
+                [
+                    'key' => '_guide_servientrega',
+                    'compare' => 'EXISTS'
+                ]
+            ],
+            'return' => 'ids',
+        ]);
+
+        foreach ($ids as $id) {
+            self::order_status_changed_state_guide_schedule($id);
         }
     }
 

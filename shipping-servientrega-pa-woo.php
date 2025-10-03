@@ -3,13 +3,16 @@
  * Plugin Name: Shipping Servientrega Panamá Woo
  * Description: Shipping Servientrega Panamá Woocommerce
  * Version: 1.0.0
- * Author: Saul Morales Pacheco
+ * Author: Saúl Morales Pacheco
  * Author URI: https://saulmoralespa.com
  * License: GNU General Public License v3.0
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
- * WC tested up to: 8.9.2
- * WC requires at least: 6.9
- * Requires Plugins: woocommerce
+ * WC tested up to: 10.2.2
+ * WC requires at least: 8.9
+ * Requires at least: 6.0
+ * Tested up to: 6.8
+ * Requires PHP: 8.1
+ * Requires Plugins: woocommerce,provincias-y-distritos-de-panama-para-woocommerce
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -21,6 +24,14 @@ if(!defined('SHIPPING_SERVIENTREGA_PA_WC_SSP_VERSION')){
 }
 
 add_action( 'plugins_loaded', 'shipping_servientrega_pa_wc_ssp_init');
+add_action(
+        'before_woocommerce_init',
+        function () {
+            if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
+                \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__ );
+            }
+        }
+);
 
 function shipping_servientrega_pa_wc_ssp_init(): void
 {
@@ -89,13 +100,15 @@ function shipping_servientrega_pa_wc_ssp(){
 
 function activate_servientrega_pa_wc_ssp(): void
 {
-    wp_schedule_event( time(), 'monthly', 'servientrega_pa_wc_ssp_schedule' );
+    if ( ! wp_next_scheduled( 'servientrega_pa_wc_ssp_schedule'  ) ) {
+        wp_schedule_event( time(), 'monthly', 'servientrega_pa_wc_ssp_schedule' );
+    }
 }
 
-function deactivation_sservientrega_pa_wc_ssp():void
+function deactivation_servientrega_pa_wc_ssp():void
 {
     wp_clear_scheduled_hook( 'servientrega_pa_wc_ssp_schedule' );
 }
 
 register_activation_hook( __FILE__, 'activate_servientrega_pa_wc_ssp' );
-register_deactivation_hook( __FILE__, 'deactivation_sservientrega_pa_wc_ssp' );
+register_deactivation_hook( __FILE__, 'deactivation_servientrega_pa_wc_ssp' );

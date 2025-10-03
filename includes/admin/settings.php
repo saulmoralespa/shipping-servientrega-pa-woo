@@ -42,7 +42,7 @@ return apply_filters(
             'guides'          => array(
                 'title'       => __( 'Generación de guías' ),
                 'type'        => 'title',
-                'description' => __( 'usu y pwd para el entorno de producción' ),
+                'description' => __( 'usuario y contraseña para el entorno de producción' ),
             ),
             'username' => array(
                 'title' => __( 'Usuario' ),
@@ -66,6 +66,18 @@ return apply_filters(
                 'options'     => array(
                     'PREMIER-RESIDENCIAL'    => __( 'PREMIER-RESIDENCIAL'),
                     'PREMIER-CDS A CDS' => __( 'PREMIER-CDS A CDS')
+                ),
+            ),
+            'print_type' => array(
+                'title' => __('Formato de impresión'),
+                'type'        => 'select',
+                'class'       => 'wc-enhanced-select',
+                'description' => __('Seleccione el formato de impresión'),
+                'desc_tip' => true,
+                'default' => 'carta',
+                'options'     => array(
+                    'carta'    => __( 'Carta'),
+                    'sticker' => __( 'Sticker')
                 ),
             ),
             'sender'  => array(
@@ -123,6 +135,20 @@ return apply_filters(
                 'default'     => 'no',
                 'description' => __( 'Permite la generación de guías cuando el envío es gratuito' ),
                 'desc_tip' => true
+            ),
+            'status_guide'  => array(
+                'title' => __( 'Estado de guía' ),
+                'type'  => 'title'
+            ),
+            'button_changed_order_status_to_processing'  => array(
+                'title' => 'Actualizar ordenes a completado',
+                'type'  => 'button',
+                'class' => 'button-secondary shipping-servientrega-status-to-processing',
+                'description' => "Actualiza a completado las ordenes según estado de envío",
+                'text' => 'Actualizar ahora',
+                'custom_attributes' => array(
+                    'data-nonce' => wp_create_nonce( 'shipping_servientrega_order_status_changed_state_guide' )
+                )
             ),
         )
     )

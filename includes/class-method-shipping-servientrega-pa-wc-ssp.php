@@ -73,8 +73,11 @@ class WC_Shipping_Method_Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Met
 
     public function validate_password_field($key, $value) :string
     {
-        if($this->get_option('username') !== '' && $key === 'password'){
-            $status = Shipping_Servientrega_PA_WC_SSP::test_quote($this->get_option('username'), $value);
+        $key_username =  'username';
+        $username = $_POST["woocommerce_{$this->id}_{$key_username}"] ?? null;
+
+        if($username && $key === 'password'){
+            $status = Shipping_Servientrega_PA_WC_SSP::test_quote($username, $value);
             if(!$status){
                 WC_Admin_Settings::add_error("Credenciales inválidas");
                 $value = '';
@@ -82,6 +85,40 @@ class WC_Shipping_Method_Shipping_Servientrega_PA_WC_SSP extends WC_Shipping_Met
         }
 
         return $value;
+    }
+
+    public function generate_button_html( $key, $data ): string
+    {
+        $field    = $this->plugin_id . $this->id . '_' . $key;
+        $defaults = array(
+            'class'             => '',
+            'css'               => '',
+            'desc_tip'          => false,
+            'description'       => '',
+            'title'             => '',
+        );
+
+        $data = wp_parse_args( $data, $defaults );
+
+        if(!Shipping_Servientrega_PA_WC_SSP::get_instance()) return '';
+
+        ob_start();
+        ?>
+        <tr valign="top">
+            <th scope="row" class="titledesc">
+                <label for="<?php echo esc_attr( $field ); ?>"><?php echo wp_kses_post( $data['title'] ); ?></label>
+                <?php echo $this->get_tooltip_html( $data ); ?>
+            </th>
+            <td class="forminp">
+                <fieldset>
+                    <legend class="screen-reader-text"><span><?php echo wp_kses_post( $data['title'] ); ?></span></legend>
+                    <button class="<?php echo esc_attr( $data['class'] ); ?>" type="button" name="<?php echo esc_attr( $field ); ?>" id="<?php echo esc_attr( $field ); ?>" style="<?php echo esc_attr( $data['css'] ); ?>" <?php echo $this->get_custom_attribute_html( $data ); ?>><?php echo wp_kses_post( $data['text'] ); ?></button>
+                    <?php echo $this->get_description_html( $data ); ?>
+                </fieldset>
+            </td>
+        </tr>
+        <?php
+        return ob_get_clean();
     }
 
     public function calculate_shipping($package = array()): void

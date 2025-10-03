@@ -19,9 +19,9 @@ class WebService
 {
     const URL_QUOTE = 'https://ws-servientrega.appsiscore.com/cotizador/ws_cotizador.php';
 
-    const SANDBOX_URL_GUIDES = 'https://ws-servientrega.appsiscore.com/test/generar_guia.php?wsdl';
+    const SANDBOX_URL_BASE_GUIDES = 'https://ws-servientrega.appsiscore.com/test/';
 
-    const URL_GUIDES = 'https://ws-servientrega.appsiscore.com/generar_guia_carta.php?wsdl';
+    const URL_BASE_GUIDES = 'https://ws-servientrega.appsiscore.com/';
 
     const URL_TRACKING_DISPATCHES = 'https://ws-servientrega.appsiscore.com/server_wst.php?wsdl';
 
@@ -43,7 +43,7 @@ class WebService
     }
 
 
-    public function sandboxMode($status = false): static
+    public function sandboxMode($status = true): static
     {
         if ($status) {
             self::$sandbox = true;
@@ -54,9 +54,9 @@ class WebService
     public static function getUrlGuides(): string
     {
         if (self::$sandbox) {
-            return self::SANDBOX_URL_GUIDES;
+            return self::SANDBOX_URL_BASE_GUIDES;
         }
-        return self::URL_GUIDES;
+        return self::URL_BASE_GUIDES;
     }
 
     /**
@@ -103,9 +103,10 @@ class WebService
      * @return \$1|false|\SimpleXMLElement
      * @throws Exception
      */
-    public function generarGuia(array $params): array
+    public function generarGuia(array $params, $printIsCarta = true): array
     {
         $endpoint = self::getUrlGuides();
+        $endpoint .= $printIsCarta ? "generar_guia_carta.php?wsdl" : "generar_guia.php?wsdl";
         return $this->callSoap($params, $endpoint);
     }
 
@@ -140,14 +141,16 @@ class WebService
                 throw new \Exception($client->getError());
             }
 
-            $xml = simplexml_load_string($result);
+            $result = simplexml_load_string($result);
 
-            if (!$xml) {
-                throw new \Exception('No se pudo obtener la respuesta del servidor');
+            if (!$result) {
+                throw new \Exception("No se ha recibido respuesta del servidor, verifique parámetros enviados.");
             }
 
-            $json = json_encode($xml);
+            $json = json_encode($result);
             return json_decode($json, true);
+        } catch (\SoapFault $soapFault) {
+            throw new \Exception($soapFault->getMessage());
         } catch (Exception $exception) {
             throw new  \Exception($exception->getMessage());
         }
